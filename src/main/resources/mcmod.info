@@ -1,0 +1,16 @@
+[
+{
+  "modid": "weblocks",
+  "name": "WEBlocks",
+  "description": "Fixes stairs and other blocks not being rotated in clipboard.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["TheCrafter4000"],
+  "credits": "sk89q for writing WorldEdit",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
