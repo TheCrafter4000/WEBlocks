@@ -5,29 +5,24 @@ import java.lang.reflect.Field;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.sk89q.worldedit.blocks.BaseBlock;
-import com.sk89q.worldedit.forge.ForgeWorld;
-import com.sk89q.worldedit.world.registry.LegacyBlockRegistry;
 import com.sk89q.worldedit.world.registry.LegacyWorldData;
-import com.sk89q.worldedit.world.registry.State;
 
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.Mod.Instance;
-import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 
 
 /**
- * WEBlocks, a mod by TheCrafter4000.
+ * WEBlocks, a WorldEdit fix to support other mod's blocks for rotating operations.
  * @author TheCrafter4000
  */
 @Mod(modid = WEBlocks.MODID, version = WEBlocks.VERSION, name = WEBlocks.NAME, acceptableRemoteVersions = "*")
 public class WEBlocks {
 	public static final String MODID = "weblocks";
-	public static final String VERSION = "1.0";
+	public static final String VERSION = "1.1";
 	public static final String NAME = "WEBlocks";
 		
 	@Instance
@@ -36,7 +31,7 @@ public class WEBlocks {
 	
 	@EventHandler
 	public void preInit(FMLPreInitializationEvent event) {
-		//TODO: Read config
+//		ModdedBlockRegistry.load(event.getModConfigurationDirectory());
 	}
 	
 	@EventHandler
@@ -46,11 +41,10 @@ public class WEBlocks {
 	public void postInit(FMLPostInitializationEvent event) {
 		inject(LegacyWorldData.class.getName(), "INSTANCE", "blockRegistry");
 		inject("com.sk89q.worldedit.forge.ForgeWorldData", "INSTANCE", "blockRegistry");
-		//TODO: Add a way to do this via config.
 	}
 	
 	/**
-	 * Injects a modified block registry into an {@link LegacyWorldData} instance.
+	 * Injects a modified block registry into an {@link LegacyWorldData} instance field.
 	 * @param clazz The class you want to inject in. Must be a subclass of {@link {@link LegacyWorldData}
 	 * @param instanceField Name of the instance field. Mostly "INSTANCE".
 	 * @param registryField Name of the block registry field. Mostly "blockRegistry".

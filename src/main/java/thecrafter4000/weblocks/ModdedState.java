@@ -16,7 +16,7 @@ import com.sk89q.worldedit.world.registry.StateValue;
 public class ModdedState implements State {
 	
     private Byte dataMask;
-    private Map<String, ModdedStateValue> values;
+    private Map<String, ModdedStateValue> values; //TODO: Remove these unnecessary strings, make it a list.
     
     public ModdedState(Byte dataMask, Map<String, ModdedStateValue> values) {
 		this.dataMask = dataMask;
@@ -41,7 +41,7 @@ public class ModdedState implements State {
         return null;
     }
 
-    byte getDataMask() {
+    public byte getDataMask() {
         return dataMask != null ? dataMask : 0xF;
     }
 
