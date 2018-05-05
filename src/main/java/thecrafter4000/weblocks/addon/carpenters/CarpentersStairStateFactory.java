@@ -1,8 +1,9 @@
-package thecrafter4000.weblocks;
+package thecrafter4000.weblocks.addon.carpenters;
 
 import java.util.List;
 import java.util.Map;
 
+import com.carpentersblocks.block.BlockCarpentersStairs;
 import com.carpentersblocks.data.Stairs;
 import com.carpentersblocks.tileentity.TEBase;
 import com.google.common.collect.Lists;
@@ -13,74 +14,86 @@ import com.sk89q.worldedit.blocks.BaseBlock;
 import com.sk89q.worldedit.world.registry.State;
 import com.sk89q.worldedit.world.registry.StateValue;
 
+import net.minecraft.block.Block;
 import net.minecraftforge.common.util.ForgeDirection;
+import thecrafter4000.weblocks.WEBlocks;
+import thecrafter4000.weblocks.addon.IStateFactory;
 
 /**
  * Carpenters Stair integration
  * @author TheCrafter4000
  */
-public class CarpentersState implements State {
+public class CarpentersStairStateFactory implements IStateFactory {
+
+	/** Stores all states */
+	private List<CarpentersState> states = Lists.newArrayList(
+			new CarpentersState(Stairs.Type.NORMAL_SIDE),
+			new CarpentersState(Stairs.Type.NORMAL),
+			new CarpentersState(Stairs.Type.NORMAL_INT),
+			new CarpentersState(Stairs.Type.NORMAL_EXT));
 	
-	/** Internal use */
-	private static List<CarpentersState> states = Lists.newArrayList();
+	public CarpentersStairStateFactory() {}
 	
-	/** Get's the internal carpenter meta from an BaseBlock */
-	public static byte getMeta(BaseBlock block) {
-		return (byte) block.getNbtData().getInt(TEBase.TAG_METADATA);
+	@Override
+	public boolean canCreateState(BaseBlock bukkitblock, Block forgeblock) {
+		return forgeblock instanceof BlockCarpentersStairs;
 	}
-	
-	/** Get's the fitting state for the internal meta because Carpenters stairs are rotated differently depending on it's type. */
-	public static CarpentersState getByMeta(int meta) {
+
+	@Override
+	public boolean shouldAlwaysAdd() {
+		return true;
+	}
+
+	@Override
+	public State create(BaseBlock bukkitblock, Block forgeblock) {
+		int meta = getMeta(bukkitblock);
 		Stairs.Type t = Stairs.stairsList[meta].stairsType;
+		
 		for(CarpentersState s : states) {
 			if(s.type == t) {
 				return s;
 			}
 		};
+		
 		WEBlocks.Logger.fatal("Did not resolve CarpenterState for meta " + meta + "!");
 		return null;
 	}
 	
-	/** Helper function. Calls {@link #getByMeta(int)} */
-	public static CarpentersState getByBlock(BaseBlock block) {
-		return getByMeta(getMeta(block));
+	/** Get's the internal carpenter meta from an BaseBlock */
+	private static byte getMeta(BaseBlock block) {
+		return (byte) block.getNbtData().getInt(TEBase.TAG_METADATA);
 	}
 	
-	public static final CarpentersState NORMAL_SIDE = new CarpentersState(Stairs.Type.NORMAL_SIDE);
-	public static final CarpentersState NORMAL		= new CarpentersState(Stairs.Type.NORMAL);
-	public static final CarpentersState NORMAL_INT  = new CarpentersState(Stairs.Type.NORMAL_INT);
-	public static final CarpentersState NORMAL_EXT  = new CarpentersState(Stairs.Type.NORMAL_EXT);
-	
 	/*=====================================================================================*/
-
-	private final Stairs.Type type;
-	private Map<String, CarpentersStateValue> map = Maps.newHashMap();
 	
-	public CarpentersState(Stairs.Type type) {
-		if(!CarpentersStateValue.initalized) CarpentersStateValue.initalize();
-		this.type = type;
-		for(int i = 0; i < Stairs.stairsList.length; i++) {
-			if(Stairs.stairsList[i].stairsType == type) {
-				map.put("ID: " + i, CarpentersStateValue.values[i]);
+	private static class CarpentersState implements State {
+		private final Stairs.Type type;
+		private Map<String, CarpentersStateValue> map = Maps.newHashMap();
+		
+		public CarpentersState(Stairs.Type type) {
+			if(!CarpentersStateValue.initalized) CarpentersStateValue.initalize();
+			this.type = type;
+			for(int i = 0; i < Stairs.stairsList.length; i++) {
+				if(Stairs.stairsList[i].stairsType == type) {
+					map.put("ID: " + i, CarpentersStateValue.values[i]);
+				}
 			}
 		}
 
-		states.add(this);
-	}
+		@Override
+		public Map<String, ? extends StateValue> valueMap() {
+			return map;
+		}
 
-	@Override
-	public Map<String, ? extends StateValue> valueMap() {
-		return map;
-	}
+		@Override
+		public StateValue getValue(BaseBlock block) {
+			return CarpentersStateValue.values[getMeta(block)];
+		}
 
-	@Override
-	public StateValue getValue(BaseBlock block) {
-		return CarpentersStateValue.values[getMeta(block)];
-	}
-
-	@Override
-	public boolean hasDirection() { 
-		return true; 
+		@Override
+		public boolean hasDirection() { 
+			return true; 
+		}
 	}
 	
 	/*=====================================================================================*/
@@ -92,7 +105,7 @@ public class CarpentersState implements State {
 		private static void initalize() {
 			for(int i = 0; i < Stairs.stairsList.length; i++) {
 				List<ForgeDirection> directions = Stairs.stairsList[i].facings;
-				new CarpentersStateValue(i, new Vector( //Uses the facings for the vector is highly skilled.
+				new CarpentersStateValue(i, new Vector( //Using stored facings for the vector is highly skilled...
 						directions.contains(ForgeDirection.EAST) ? 1 : (directions.contains(ForgeDirection.WEST) ? -1 : 0), 
 						directions.contains(ForgeDirection.UP) ? 1 : (directions.contains(ForgeDirection.DOWN) ? -1 : 0), 
 						directions.contains(ForgeDirection.SOUTH) ? 1 : (directions.contains(ForgeDirection.NORTH) ? -1 : 0)));
@@ -113,7 +126,7 @@ public class CarpentersState implements State {
 
 		@Override
 		public boolean isSet(BaseBlock block) {
-			return id == CarpentersState.getMeta(block);
+			return id == getMeta(block);
 		}
 
 		@Override

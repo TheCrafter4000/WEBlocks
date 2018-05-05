@@ -7,12 +7,15 @@ import org.apache.logging.log4j.Logger;
 
 import com.sk89q.worldedit.world.registry.LegacyWorldData;
 
+import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.Mod.Instance;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
+import thecrafter4000.weblocks.addon.StairStateFactory;
+import thecrafter4000.weblocks.addon.carpenters.CarpentersStairStateFactory;
 
 
 /**
@@ -22,7 +25,7 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 @Mod(modid = WEBlocks.MODID, version = WEBlocks.VERSION, name = WEBlocks.NAME, acceptableRemoteVersions = "*")
 public class WEBlocks {
 	public static final String MODID = "weblocks";
-	public static final String VERSION = "1.1";
+	public static final String VERSION = "1.1.1";
 	public static final String NAME = "WEBlocks";
 		
 	@Instance
@@ -32,6 +35,7 @@ public class WEBlocks {
 	@EventHandler
 	public void preInit(FMLPreInitializationEvent event) {
 //		ModdedBlockRegistry.load(event.getModConfigurationDirectory());
+		ModdedBlockRegistry.registerFactory(new StairStateFactory());
 	}
 	
 	@EventHandler
@@ -41,6 +45,12 @@ public class WEBlocks {
 	public void postInit(FMLPostInitializationEvent event) {
 		inject(LegacyWorldData.class.getName(), "INSTANCE", "blockRegistry");
 		inject("com.sk89q.worldedit.forge.ForgeWorldData", "INSTANCE", "blockRegistry");
+		
+		if(Loader.isModLoaded("CarpentersBlocks")) {
+			Logger.info("Enabled Carpenter's Blocks support!");
+			ModdedBlockRegistry.registerFactory(new CarpentersStairStateFactory());
+			//TODO: Make one Factory for all Sided blocks
+		}
 	}
 	
 	/**
@@ -70,7 +80,7 @@ public class WEBlocks {
 		try {
 			Field f = LegacyWorldData.class.getDeclaredField(registryField);
 			f.setAccessible(true);
-			f.set(instance, new ModdedBlockRegistry());
+			f.set(instance, ModdedBlockRegistry.INSTANCE);
 			Logger.info("Successfully replaced blockRegistry for " + clazz + "!");
 		}catch(NoSuchFieldException e) {
 			Logger.fatal("Did not resolve blockRegistry field " + registryField + " in " + clazz + "!", e);

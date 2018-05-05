@@ -1,13 +1,13 @@
 package thecrafter4000.weblocks;
 
 import java.io.File;
+import java.util.List;
 import java.util.Map;
 
-import com.carpentersblocks.block.BlockCarpentersStairs;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
 import com.sk89q.worldedit.Vector;
 import com.sk89q.worldedit.blocks.BaseBlock;
 import com.sk89q.worldedit.util.gson.VectorAdapter;
@@ -15,7 +15,7 @@ import com.sk89q.worldedit.world.registry.LegacyBlockRegistry;
 import com.sk89q.worldedit.world.registry.State;
 
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockStairs;
+import thecrafter4000.weblocks.addon.IStateFactory;
 
 /**
  * A block registry using unlocalized names instead of numeric id's.
@@ -23,12 +23,31 @@ import net.minecraft.block.BlockStairs;
  */
 public class ModdedBlockRegistry extends LegacyBlockRegistry {
 	
-	/** Internal use only */
-	private static Map<String, Map<String, State>> registry = Maps.newHashMap();
+	public static final ModdedBlockRegistry INSTANCE = new ModdedBlockRegistry();
+	
+	private ModdedBlockRegistry() {}
+	
+	/** Holds all states. Key is the unlocalized name of the block */
+	private static final Map<String, List<State>> registry = Maps.newHashMap();
+	/** Holds all {@link IStateFactory} instances */
+	private static final List<IStateFactory> factories = Lists.newArrayList();
 	
 	/** Registers a list of states. */
-	public static void register(Block block, Map<String, State> values) {
-		registry.put(block.getUnlocalizedName().substring(5), values);
+	public static void register(Block block, List<State> values) {
+		String key = toUnlcStr(block);
+		if(registry.get(key) != null) {
+			registry.get(key).addAll(values);
+		}else registry.put(key, Lists.newArrayList(values));
+	}
+	
+	/** Registers a state */
+	public static void register(Block block, State state) {
+		register(block, Lists.newArrayList(state));
+	}
+	
+	/** Registers an state factory. Use this to handle more complicated stuff. */
+	public static void registerFactory(IStateFactory instance) {
+		factories.add(instance);
 	}
 	
 	//TODO: Make the config work
@@ -47,7 +66,7 @@ public class ModdedBlockRegistry extends LegacyBlockRegistry {
         Gson gson = gsonBuilder.create();
 
         try {
-        	registry = gson.fromJson(file.getAbsolutePath(), new TypeToken<Map<String, Map<String, State>>>() {}.getType());
+ //       	registry = gson.fromJson(file.getAbsolutePath(), new TypeToken<Map<String, Map<String, State>>>() {}.getType());
         }catch(Exception e) {
         	WEBlocks.Logger.fatal("Invalid configuration!");
  //       	registry = Maps.newHashMap();
@@ -55,35 +74,19 @@ public class ModdedBlockRegistry extends LegacyBlockRegistry {
         }
 	}
 	
-	/** Registers the "facing" state */
-	public static void registerFacing(Block block, State state) {
-		Map<String, State> map = Maps.newHashMap();
-		map.put("facing", state);
-		register(block, map);
-	}
-	
 	/** Get's all registered states */
-	public static Map<String, State> getModdedStates(BaseBlock bukkitblock){
+	public static List<State> getModdedStates(BaseBlock bukkitblock){
 		Block block = Block.getBlockById(bukkitblock.getId());
-		Map<String, State> states = registry.get(toUnlcStr(block));
-		if(states == null) { // Default values
-			states = Maps.newHashMap();
-			if(block instanceof BlockStairs) { // Copied from OAK_STAIRS
-				Map<String, ModdedStateValue> values = Maps.newHashMap();
-				values.put("east", new ModdedStateValue((byte) 4, new Vector(1, 1, 0)));
-				values.put("west", new ModdedStateValue((byte) 5, new Vector(-1, 1, 0)));
-				values.put("north", new ModdedStateValue((byte) 7, new Vector(0, 1, -1)));
-				values.put("south", new ModdedStateValue((byte) 6, new Vector(0, 1, 1)));
-				values.put("east_upsidedown", new ModdedStateValue((byte) 0, new Vector(1, -1, 0)));
-				values.put("west_upsidedown", new ModdedStateValue((byte) 1, new Vector(-1, -1, 0)));
-				values.put("north_upsidedown", new ModdedStateValue((byte) 3, new Vector(0, -1, -1)));
-				values.put("south_upsidedown", new ModdedStateValue((byte) 2, new Vector(0, -1, 1)));
-				states.put("facing", new ModdedState((byte) 7, values));
-				
-				registry.put(toUnlcStr(block), states); // Saves created states for performance reasons.
-//				System.out.println(new GsonBuilder().setPrettyPrinting().create().toJson(registry));
-			}else if(block instanceof BlockCarpentersStairs) { //TODO: Make carpenters support a module
-				states.put("facing", CarpentersState.getByBlock(bukkitblock));
+		List<State> states = registry.get(toUnlcStr(block));
+		boolean isEmpty = false;
+		if(states == null || states.isEmpty()) { 
+			states = Lists.newArrayList();
+			isEmpty = true;
+		}
+		
+		for(IStateFactory factory : factories) {
+			if(factory.canCreateState(bukkitblock, block) && (isEmpty || factory.shouldAlwaysAdd())) {
+				states.add(factory.create(bukkitblock, block));
 			}
 		}
 
@@ -92,10 +95,15 @@ public class ModdedBlockRegistry extends LegacyBlockRegistry {
 	
 	@Override
 	public Map<String, ? extends State> getStates(BaseBlock block) {
-		Map<String, ? extends State> states = super.getStates(block);
-		if(states == null) {
-			states = getModdedStates(block);
+		Map<String, State> states = (Map<String, State>) super.getStates(block);
+		if(states == null || states.isEmpty()) {
+			states = Maps.newHashMap();
+			int i = 0;
+			for(State t : getModdedStates(block)) {
+				states.put("key" + ++i, t);
+			}
 		}
+//		System.err.println(states);
 //		System.out.println(toUnlcStr(Block.getBlockById(block.getId())));
 //		states.entrySet().forEach(o -> o.getValue().valueMap().entrySet().forEach( e -> System.out.println("Key1: " + o.getKey() + ", Key2: " + e.getKey() + ", Value: " + e.getValue().getDirection())));
 		return states;

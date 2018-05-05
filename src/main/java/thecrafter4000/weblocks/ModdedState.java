@@ -16,7 +16,7 @@ import com.sk89q.worldedit.world.registry.StateValue;
 public class ModdedState implements State {
 	
     private Byte dataMask;
-    private Map<String, ModdedStateValue> values; //TODO: Remove these unnecessary strings, make it a list.
+    private Map<String, ModdedStateValue> values; // String not necessary, possible old code copied into 1.7.10
     
     public ModdedState(Byte dataMask, Map<String, ModdedStateValue> values) {
 		this.dataMask = dataMask;
@@ -56,7 +56,7 @@ public class ModdedState implements State {
         return false;
     }
 
-    void postDeserialization() {
+    private void postDeserialization() {
         for (ModdedStateValue v : values.values()) {
             v.setState(this);
         }
