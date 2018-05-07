@@ -15,8 +15,8 @@ import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import thecrafter4000.weblocks.addon.StairStateFactory;
+import thecrafter4000.weblocks.addon.carpenters.CarpentersSlabStateFactory;
 import thecrafter4000.weblocks.addon.carpenters.CarpentersStairStateFactory;
-
 
 /**
  * WEBlocks, a WorldEdit fix to support other mod's blocks for rotating operations.
@@ -25,7 +25,7 @@ import thecrafter4000.weblocks.addon.carpenters.CarpentersStairStateFactory;
 @Mod(modid = WEBlocks.MODID, version = WEBlocks.VERSION, name = WEBlocks.NAME, acceptableRemoteVersions = "*")
 public class WEBlocks {
 	public static final String MODID = "weblocks";
-	public static final String VERSION = "1.1.1";
+	public static final String VERSION = "1.1.2";
 	public static final String NAME = "WEBlocks";
 		
 	@Instance
@@ -35,6 +35,7 @@ public class WEBlocks {
 	@EventHandler
 	public void preInit(FMLPreInitializationEvent event) {
 //		ModdedBlockRegistry.load(event.getModConfigurationDirectory());
+		//TODO: Fix config
 		ModdedBlockRegistry.registerFactory(new StairStateFactory());
 	}
 	
@@ -49,7 +50,8 @@ public class WEBlocks {
 		if(Loader.isModLoaded("CarpentersBlocks")) {
 			Logger.info("Enabled Carpenter's Blocks support!");
 			ModdedBlockRegistry.registerFactory(new CarpentersStairStateFactory());
-			//TODO: Make one Factory for all Sided blocks
+			ModdedBlockRegistry.registerFactory(new CarpentersSlabStateFactory());
+			//TODO: Make more factories
 		}
 	}
 	

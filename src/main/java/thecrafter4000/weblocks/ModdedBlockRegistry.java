@@ -1,9 +1,11 @@
 package thecrafter4000.weblocks;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
@@ -37,12 +39,12 @@ public class ModdedBlockRegistry extends LegacyBlockRegistry {
 		String key = toUnlcStr(block);
 		if(registry.get(key) != null) {
 			registry.get(key).addAll(values);
-		}else registry.put(key, Lists.newArrayList(values));
+		}else registry.put(key, new ArrayList<State>(values));
 	}
 	
 	/** Registers a state */
 	public static void register(Block block, State state) {
-		register(block, Lists.newArrayList(state));
+		register(block, ImmutableList.of(state));
 	}
 	
 	/** Registers an state factory. Use this to handle more complicated stuff. */
@@ -50,7 +52,6 @@ public class ModdedBlockRegistry extends LegacyBlockRegistry {
 		factories.add(instance);
 	}
 	
-	//TODO: Make the config work
 	protected static void load(File dir) {
 		File file = new File(dir.getAbsoluteFile() + "/worldedit/ModdedBlocks.json");
 		if(!file.exists()) {
@@ -80,7 +81,7 @@ public class ModdedBlockRegistry extends LegacyBlockRegistry {
 		List<State> states = registry.get(toUnlcStr(block));
 		boolean isEmpty = false;
 		if(states == null || states.isEmpty()) { 
-			states = Lists.newArrayList();
+			states = new ArrayList<State>();
 			isEmpty = true;
 		}
 		
