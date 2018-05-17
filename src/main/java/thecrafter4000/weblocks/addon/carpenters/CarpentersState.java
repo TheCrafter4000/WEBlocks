@@ -1,11 +1,10 @@
 package thecrafter4000.weblocks.addon.carpenters;
 
-import static thecrafter4000.weblocks.addon.carpenters.CarpentersUtils.*;
+import static thecrafter4000.weblocks.WEBlocks.toImmutableMap;
+import static thecrafter4000.weblocks.addon.carpenters.CarpentersUtils.getMeta;
 
 import java.util.Map;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMap.Builder;
 import com.sk89q.worldedit.blocks.BaseBlock;
 import com.sk89q.worldedit.world.registry.State;
 import com.sk89q.worldedit.world.registry.StateValue;

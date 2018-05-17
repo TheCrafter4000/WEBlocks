@@ -5,40 +5,42 @@ import com.sk89q.worldedit.blocks.BaseBlock;
 import com.sk89q.worldedit.world.registry.StateValue;
 
 /**
- * Clone of {@link com.sk89q.worldedit.world.registry.SimpleStateValue}
+ * Custom {@link StateValue} implementation.
+ * @author TheCrafter4000
  */
 public class ModdedStateValue implements StateValue {
 
-    private ModdedState state;
-    private Byte data;
-    private Vector direction;
-    
-    public ModdedStateValue(Byte data, Vector direction) {
-		this.data = data;
+	private transient byte dataMask;
+	private byte meta;
+	private Vector direction;
+
+	public ModdedStateValue(byte data, Vector direction) {
+		this.meta = data;
 		this.direction = direction;
 	}
 
-	void setState(ModdedState state) {
-        this.state = state;
-    }
+	public ModdedStateValue(int data, Vector direction) {
+		this((byte) data, direction);
+	}
 
-    @Override
-    public boolean isSet(BaseBlock block) {
-        return data != null && (block.getData() & state.getDataMask()) == data;
-    }
+	/** Get's the dataMask from parent */
+	void validate(ModdedState moddedState) {
+		dataMask = moddedState.getDataMask();
+	}
 
-    @Override
-    public boolean set(BaseBlock block) {
-        if (data != null) {
-            block.setData((block.getData() & ~state.getDataMask()) | data);
-            return true;
-        } else {
-            return false;
-        }
-    }
+	@Override
+	public boolean isSet(BaseBlock block) {
+		return (block.getData() & dataMask) == meta;
+	}
 
-    @Override
-    public Vector getDirection() {
-        return direction;
-    }
+	@Override
+	public boolean set(BaseBlock block) {
+		block.setData((block.getData() & ~dataMask) | meta);
+		return true;
+	}
+
+	@Override
+	public Vector getDirection() {
+		return direction;
+	}
 }

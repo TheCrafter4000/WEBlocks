@@ -1,13 +1,18 @@
 package thecrafter4000.weblocks;
 
+import static thecrafter4000.weblocks.WEBlocks.toImmutableMap;
+
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.sk89q.worldedit.Vector;
@@ -44,45 +49,65 @@ public class ModdedBlockRegistry extends LegacyBlockRegistry {
 	
 	/** Registers a state */
 	public static void register(Block block, State state) {
-		register(block, ImmutableList.of(state));
+		register(block, Lists.newArrayList(state));
 	}
 	
 	/** Registers an state factory. Use this to handle more complicated stuff. */
 	public static void registerFactory(IStateFactory instance) {
 		factories.add(instance);
 	}
-	
+		
 	protected static void load(File dir) {
-		File file = new File(dir.getAbsoluteFile() + "/worldedit/ModdedBlocks.json");
+		File file = new File(dir.getAbsoluteFile() + "/worldedit/ModdedBlocks.json"); // Config file
+		Type type = new TypeToken<Map<String, List<ModdedState>>>() {}.getType();// Config type
+        GsonBuilder builder = new GsonBuilder();
+        builder.registerTypeAdapter(Vector.class, new VectorAdapter()); // Maybe update this class to support serializing operations too
+        builder.setPrettyPrinting();
+        Gson gson = builder.create();
+		
 		if(!file.exists()) {
 			try {
 				file.createNewFile();
+				FileWriter writer = new FileWriter(file);
+				gson.toJson(registry, type, writer); // The map is empty at this point.
+				writer.close();
+				WEBlocks.Logger.info("Did not resolve configuration file. Created a new one at " + file.getAbsolutePath() + "!");
 			}catch(Exception e) {
 				WEBlocks.Logger.catching(e);
 			}
 		}
-		
-        GsonBuilder gsonBuilder = new GsonBuilder();
-        gsonBuilder.registerTypeAdapter(Vector.class, new VectorAdapter());
-        Gson gson = gsonBuilder.create();
-
+        
         try {
- //       	registry = gson.fromJson(file.getAbsolutePath(), new TypeToken<Map<String, Map<String, State>>>() {}.getType());
+        	FileReader reader = new FileReader(file);
+        	registry.putAll(gson.fromJson(reader, type));
+        	reader.close();
+        	WEBlocks.Logger.info("Successfully loaded config.");
         }catch(Exception e) {
-        	WEBlocks.Logger.fatal("Invalid configuration!");
- //       	registry = Maps.newHashMap();
-        	e.printStackTrace();
+        	WEBlocks.Logger.fatal("Invalid configuration! Skipping loading. File path: " + file.getAbsolutePath(), e);
         }
 	}
 	
-	/** Get's all registered states */
-	public static List<State> getModdedStates(BaseBlock bukkitblock){
-		Block block = Block.getBlockById(bukkitblock.getId());
-		List<State> states = registry.get(toUnlcStr(block));
-		boolean isEmpty = false;
-		if(states == null || states.isEmpty()) { 
+	@Override
+	public Map<String, ? extends State> getStates(BaseBlock block) {
+		Map<String, State> states = (Map<String, State>) super.getStates(block); // Get's WE entries.
+		if(states == null) { // Creates new map if no results we're found by super call.
+			states = Maps.newHashMap();
+		}
+		
+		states.putAll(toImmutableMap(getModdedStates(block, states.isEmpty()).toArray(new State[0])));
+		
+		return states;
+	}
+	
+	/** Get's all injected registered states. */
+	private static List<State> getModdedStates(BaseBlock bukkitblock, boolean isEmpty){
+		Block block = Block.getBlockById(bukkitblock.getId()); // Getting forge block
+		List<State> states = registry.get(toUnlcStr(block)); // Getting stored entries.
+		
+		if(states == null) { // Null-safety
 			states = new ArrayList<State>();
-			isEmpty = true;
+		}else if(!states.isEmpty() && isEmpty) { // If we found nothing with WE, but in our own registry;
+			isEmpty = false;
 		}
 		
 		for(IStateFactory factory : factories) {
@@ -91,22 +116,6 @@ public class ModdedBlockRegistry extends LegacyBlockRegistry {
 			}
 		}
 
-		return states;
-	}
-	
-	@Override
-	public Map<String, ? extends State> getStates(BaseBlock block) {
-		Map<String, State> states = (Map<String, State>) super.getStates(block);
-		if(states == null || states.isEmpty()) {
-			states = Maps.newHashMap();
-			int i = 0;
-			for(State t : getModdedStates(block)) {
-				states.put("key" + ++i, t);
-			}
-		}
-//		System.err.println(states);
-//		System.out.println(toUnlcStr(Block.getBlockById(block.getId())));
-//		states.entrySet().forEach(o -> o.getValue().valueMap().entrySet().forEach( e -> System.out.println("Key1: " + o.getKey() + ", Key2: " + e.getKey() + ", Value: " + e.getValue().getDirection())));
 		return states;
 	}
 	

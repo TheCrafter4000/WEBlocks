@@ -1,10 +1,15 @@
 package thecrafter4000.weblocks;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.lang.reflect.Field;
+import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap.Builder;
 import com.sk89q.worldedit.world.registry.LegacyWorldData;
 
 import cpw.mods.fml.common.Loader;
@@ -25,7 +30,7 @@ import thecrafter4000.weblocks.addon.carpenters.CarpentersStairStateFactory;
 @Mod(modid = WEBlocks.MODID, version = WEBlocks.VERSION, name = WEBlocks.NAME, acceptableRemoteVersions = "*")
 public class WEBlocks {
 	public static final String MODID = "weblocks";
-	public static final String VERSION = "1.1.2";
+	public static final String VERSION = "1.2.0";
 	public static final String NAME = "WEBlocks";
 		
 	@Instance
@@ -34,8 +39,7 @@ public class WEBlocks {
 	
 	@EventHandler
 	public void preInit(FMLPreInitializationEvent event) {
-//		ModdedBlockRegistry.load(event.getModConfigurationDirectory());
-		//TODO: Fix config
+		ModdedBlockRegistry.load(event.getModConfigurationDirectory());
 		ModdedBlockRegistry.registerFactory(new StairStateFactory());
 	}
 	
@@ -52,6 +56,7 @@ public class WEBlocks {
 			ModdedBlockRegistry.registerFactory(new CarpentersStairStateFactory());
 			ModdedBlockRegistry.registerFactory(new CarpentersSlabStateFactory());
 			//TODO: Make more factories
+			//TODO: Add layer rotation support.
 		}
 	}
 	
@@ -83,11 +88,21 @@ public class WEBlocks {
 			Field f = LegacyWorldData.class.getDeclaredField(registryField);
 			f.setAccessible(true);
 			f.set(instance, ModdedBlockRegistry.INSTANCE);
-			Logger.info("Successfully replaced blockRegistry for " + clazz + "!");
+			Logger.debug("Successfully replaced blockRegistry for " + clazz + "!");
 		}catch(NoSuchFieldException e) {
 			Logger.fatal("Did not resolve blockRegistry field " + registryField + " in " + clazz + "!", e);
 		}catch (IllegalArgumentException | IllegalAccessException e) {
 			Logger.fatal("Failed to overwrite blockRegistry for " + clazz + "!", e);
 		}
+	}
+	
+	/** Copies array data into an map. The {@code key} is the String representation of the index, using {@link String#valueOf(int)}. */
+	public static <V> Map<String, V> toImmutableMap(V[] data){
+		checkNotNull(data);
+		Builder<String, V> builder = ImmutableMap.builder();
+		for(int i = 0; i < data.length; i++) {
+			builder.put(String.valueOf(i), data[i]);
+		}
+		return builder.build();
 	}
 }
