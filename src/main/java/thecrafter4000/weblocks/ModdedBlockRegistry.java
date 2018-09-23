@@ -1,15 +1,5 @@
 package thecrafter4000.weblocks;
 
-import static thecrafter4000.weblocks.WEBlocks.toImmutableMap;
-
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.reflect.TypeToken;
@@ -20,9 +10,19 @@ import com.sk89q.worldedit.blocks.BaseBlock;
 import com.sk89q.worldedit.util.gson.VectorAdapter;
 import com.sk89q.worldedit.world.registry.LegacyBlockRegistry;
 import com.sk89q.worldedit.world.registry.State;
-
 import net.minecraft.block.Block;
 import thecrafter4000.weblocks.addon.IStateFactory;
+
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static thecrafter4000.weblocks.WEBlocks.toImmutableMap;
 
 /**
  * A block registry using unlocalized names instead of numeric id's.
@@ -44,7 +44,7 @@ public class ModdedBlockRegistry extends LegacyBlockRegistry {
 		String key = toUnlcStr(block);
 		if(registry.get(key) != null) {
 			registry.get(key).addAll(values);
-		}else registry.put(key, new ArrayList<State>(values));
+		}else registry.put(key, new ArrayList<>(values));
 	}
 	
 	/** Registers a state */
@@ -59,17 +59,20 @@ public class ModdedBlockRegistry extends LegacyBlockRegistry {
 		
 	protected static void load(File dir) {
 		File file = new File(dir.getAbsoluteFile() + "/worldedit/ModdedBlocks.json"); // Config file
-		Type type = new TypeToken<Map<String, List<ModdedState>>>() {}.getType();// Config type
+		Type type = new TypeToken<Map<String[], List<ModdedState>>>(){}.getType(); // Config type
+		Map<String[], List<State>> loaded = new HashMap<>();
+
         GsonBuilder builder = new GsonBuilder();
-        builder.registerTypeAdapter(Vector.class, new VectorAdapter()); // Maybe update this class to support serializing operations too
+        builder.registerTypeAdapter(Vector.class, new VectorAdapter());
+		builder.enableComplexMapKeySerialization();
         builder.setPrettyPrinting();
         Gson gson = builder.create();
-		
+
 		if(!file.exists()) {
 			try {
 				file.createNewFile();
 				FileWriter writer = new FileWriter(file);
-				gson.toJson(registry, type, writer); // The map is empty at this point.
+				gson.toJson(loaded, type, writer); // The map is empty at this point.
 				writer.close();
 				WEBlocks.Logger.info("Did not resolve configuration file. Created a new one at " + file.getAbsolutePath() + "!");
 			}catch(Exception e) {
@@ -79,7 +82,18 @@ public class ModdedBlockRegistry extends LegacyBlockRegistry {
         
         try {
         	FileReader reader = new FileReader(file);
-        	registry.putAll(gson.fromJson(reader, type));
+
+        	loaded = gson.fromJson(reader, type);
+        	loaded.forEach((unlocalizedNames, moddedStates) -> {
+				for (State state : moddedStates) {
+					((ModdedState)state).validate();
+				}
+
+        		for(String name : unlocalizedNames) {
+					registry.put(name, moddedStates);
+				}
+			});
+
         	reader.close();
         	WEBlocks.Logger.info("Successfully loaded config.");
         }catch(Exception e) {
@@ -105,7 +119,7 @@ public class ModdedBlockRegistry extends LegacyBlockRegistry {
 		List<State> states = registry.get(toUnlcStr(block)); // Getting stored entries.
 		
 		if(states == null) { // Null-safety
-			states = new ArrayList<State>();
+			states = new ArrayList<>();
 		}else if(!states.isEmpty() && isEmpty) { // If we found nothing with WE, but in our own registry;
 			isEmpty = false;
 		}

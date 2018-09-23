@@ -1,14 +1,13 @@
 package thecrafter4000.weblocks;
 
-import static thecrafter4000.weblocks.WEBlocks.toImmutableMap;
-
-import java.util.Map;
-
-import javax.annotation.Nullable;
-
 import com.sk89q.worldedit.blocks.BaseBlock;
 import com.sk89q.worldedit.world.registry.State;
 import com.sk89q.worldedit.world.registry.StateValue;
+
+import javax.annotation.Nullable;
+import java.util.Map;
+
+import static thecrafter4000.weblocks.WEBlocks.toImmutableMap;
 
 /**
  * Custom {@link State} implementation.
@@ -23,9 +22,12 @@ public class ModdedState implements State {
 	public ModdedState(@Nullable Byte dataMask, ModdedStateValue[] values) {
 		this.values = values;
 		this.dataMask = dataMask;
-		
-		for (int i = 0; i < values.length; i++) {
-			values[i].validate(this);
+		validate();
+	}
+
+	public void validate() {
+		for (ModdedStateValue value : values) {
+			value.validate(this);
 		}
 	}
 
@@ -36,9 +38,9 @@ public class ModdedState implements State {
 
 	@Override
 	public StateValue getValue(BaseBlock block) {
-		for (int i = 0; i < values.length; i++) {
-			if (values[i].isSet(block)) {
-				return values[i];
+		for (ModdedStateValue value : values) {
+			if (value.isSet(block)) {
+				return value;
 			}
 		}
 
@@ -52,6 +54,12 @@ public class ModdedState implements State {
 
 	@Override
 	public boolean hasDirection() {
-		return true;
+		for (ModdedStateValue value : values) {
+			if (value.getDirection() != null) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 }

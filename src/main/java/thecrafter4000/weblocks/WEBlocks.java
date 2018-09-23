@@ -1,17 +1,8 @@
 package thecrafter4000.weblocks;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import java.lang.reflect.Field;
-import java.util.Map;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.sk89q.worldedit.world.registry.LegacyWorldData;
-
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
@@ -19,9 +10,16 @@ import cpw.mods.fml.common.Mod.Instance;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import thecrafter4000.weblocks.addon.StairStateFactory;
 import thecrafter4000.weblocks.addon.carpenters.CarpentersSlabStateFactory;
 import thecrafter4000.weblocks.addon.carpenters.CarpentersStairStateFactory;
+
+import java.lang.reflect.Field;
+import java.util.Map;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * WEBlocks, a WorldEdit fix to support other mod's blocks for rotating operations.
@@ -29,9 +27,9 @@ import thecrafter4000.weblocks.addon.carpenters.CarpentersStairStateFactory;
  */
 @Mod(modid = WEBlocks.MODID, version = WEBlocks.VERSION, name = WEBlocks.NAME, acceptableRemoteVersions = "*")
 public class WEBlocks {
-	public static final String MODID = "weblocks";
-	public static final String VERSION = "1.2.0";
-	public static final String NAME = "WEBlocks";
+	public static final String MODID = "@modid@";
+	public static final String VERSION = "@version@";
+	public static final String NAME = "@name@";
 		
 	@Instance
 	public static WEBlocks Instance = new WEBlocks();

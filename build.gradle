@@ -27,31 +27,38 @@ repositories {
 }
 
 apply plugin: 'forge'
+apply plugin: 'idea'
 
-version = "unknown"
-group= "thecrafter4000.weblocks"
-archivesBaseName = "WEBlocks"
+ext.configFile = file('build.properties')
+ext.config = parseConfig(configFile)
+
+version = config.version
+group = config.group
+//noinspection GroovyUnusedAssignment
+archivesBaseName = config.archivesBaseName
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
-File file = file("src/main/java/" + project.group.replace(".", "/") + "/" + project.archivesBaseName + ".java") // Finds main modfile
-file.readLines().each{ // Iterates over the whole file
-	if (it.contains("public static final String VERSION = ")) { // looks for the VERSION field
-			project.version = it.substring(39, it.length()-2) // Overwrites the version string
-		}
-}
-
-println "Successfully read mod version: " + project.version + "!"
+println "Current mod version: " + project.version + "!"
 
 minecraft {
     version = "1.7.10-10.13.4.1614-1.7.10"
     runDir = "eclipse"
+
+    replaceIn 'src/main/java/thecrafter4000/weblocks/WEBlocks.java'
+    replace '@version@', config.version
+    replace '@modid@', config.modid
+    replace '@name@', config.name
 }
 
 dependencies {
-    compile 'com.forgeessentials:forgeessentials:1.4.6:dev'
+    implementation 'com.forgeessentials:forgeessentials:1.4.6:dev'
+
+    implementation fileTree('dir': 'libs', 'include': '*.jar')
 }
+
+import org.apache.tools.ant.filters.ReplaceTokens
 
 processResources
 {
@@ -62,13 +69,20 @@ processResources
     // replace stuff in mcmod.info, nothing else
     from(sourceSets.main.resources.srcDirs) {
         include 'mcmod.info'
-                
-        // replace version and mcversion
-        expand 'version':project.version, 'mcversion':project.minecraft.version
+
+        filter ReplaceTokens, tokens: [version: config.version, modid: config.modid, name: config.name]
     }
         
     // copy everything else, thats not the mcmod.info
     from(sourceSets.main.resources.srcDirs) {
         exclude 'mcmod.info'
+    }
+}
+
+static def parseConfig(File config) {
+    config.withReader {
+        def prop = new Properties()
+        prop.load(it)
+        return (new ConfigSlurper().parse(prop))
     }
 }
